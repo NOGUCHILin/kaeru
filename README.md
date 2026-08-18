@@ -4,7 +4,7 @@
 One tool your AI agents and you both use.
 
 ```bash
-npx @noguchilin/kaeru --doctor     # what can this machine convert?
+npx @linno-inc/kaeru --doctor     # what can this machine convert?
 ```
 
 ## Verified, not claimed
@@ -32,7 +32,7 @@ kaeru doesn't bundle converters. It finds the ones you already have — and asks
 what *its version* actually supports. **A conversion that can't work is never offered.**
 
 ```
-$ npx @noguchilin/kaeru --doctor
+$ npx @linno-inc/kaeru --doctor
 This machine can do: 4,062 conversions
 
 Tools:
@@ -58,7 +58,7 @@ Both call the same code, so an agent and a human can never disagree about what's
 ### For agents (MCP)
 
 ```json
-{ "mcpServers": { "kaeru": { "command": "npx", "args": ["-y", "@noguchilin/kaeru"] } } }
+{ "mcpServers": { "kaeru": { "command": "npx", "args": ["-y", "@linno-inc/kaeru"] } } }
 ```
 
 One tool, `convert`. Ask for something impossible and it replies with what *is* possible

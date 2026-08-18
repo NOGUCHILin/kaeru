@@ -1,5 +1,5 @@
 {
-  "name": "@noguchilin/kaeru",
+  "name": "@linno-inc/kaeru",
   "version": "0.9.0",
   "description": "Convert anything, locally. One engine, two doors: an MCP server for your agents and a local web page for you.",
   "type": "module",
