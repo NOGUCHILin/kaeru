@@ -1,0 +1,85 @@
+# 3つの OS で、対応表に載っている変換を実際に通す。
+#
+# これが kaeru の唯一の売りなので、他人から見える場所で回す。
+#   push / PR … 速い試験だけ（分かれ道の確認と、代表的な入力での実変換）
+#   毎週     … 全組み合わせ（数千通り。時間がかかるので普段は回さない）
+
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 18 * * 0'   # 毎週月曜 03:00 JST
+  workflow_dispatch:
+
+jobs:
+  quick:
+    name: ${{ matrix.os }} / 速い試験
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci --omit=dev
+
+      # 道具は OS ごとに入れ方が違う。ここで入れた分だけ対応表が伸びる
+      - name: 道具を入れる (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick ffmpeg pandoc qpdf ghostscript
+      - name: 道具を入れる (macOS)
+        if: runner.os == 'macOS'
+        run: brew install imagemagick ffmpeg pandoc qpdf ghostscript
+      - name: 道具を入れる (Windows)
+        if: runner.os == 'Windows'
+        run: choco install -y imagemagick.tool pandoc ffmpeg
+
+      # OS ごとの分かれ道（道具が無くても通る）
+      - name: 分かれ道の試験
+        run: node test/platforms.mjs
+
+      # この機械で何が使えるか。**記録に残す**ことが目的
+      - name: この機械で使える変換
+        run: node server.js --doctor
+
+      # 代表的な入力だけ実際に変換する（全部は毎週）
+      - name: 実際に変換する（代表のみ）
+        run: node test/matrix.mjs png md
+
+  full:
+    name: ${{ matrix.os }} / 全組み合わせ
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci --omit=dev
+      - name: 道具を入れる (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick ffmpeg pandoc qpdf ghostscript img2pdf libreoffice assimp-utils
+      - name: 道具を入れる (macOS)
+        if: runner.os == 'macOS'
+        run: brew install imagemagick ffmpeg pandoc qpdf ghostscript img2pdf assimp duckdb
+      - name: 道具を入れる (Windows)
+        if: runner.os == 'Windows'
+        run: choco install -y imagemagick.tool pandoc ffmpeg qpdf ghostscript
+      - run: node server.js --doctor
+      - name: 全部を1つずつ通す
+        run: node test/matrix.mjs
+      - name: 結果を残す
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-${{ matrix.os }}
+          path: test/matrix-result.json

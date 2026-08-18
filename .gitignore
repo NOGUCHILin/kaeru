@@ -1,0 +1,5 @@
+node_modules/
+.env.local
+
+# 試験の結果は機械ごとに変わる。README の表と CI の成果物を正とする
+test/*-result.json

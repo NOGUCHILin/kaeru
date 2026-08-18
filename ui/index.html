@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kaeru — convert files locally</title>
+<style>
+  /* 見た目だけの取り決め。作り（並び）は変えていない */
+  :root{
+    --bg:#f6f7f9; --ink:#0d1117; --sub:#5b6472; --line:#e3e6ea; --card:#fff;
+    --accent:#3b6ef5; --accent-soft:#eaf0ff; --ok:#12a374; --warn:#8a5a00; --bad:#d14343;
+    --shadow:0 10px 30px -12px rgba(16,24,40,.18);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#0b0d10; --ink:#eef1f5; --sub:#9aa4b2; --line:#232830; --card:#14181d;
+           --accent:#6b9bff; --accent-soft:#182236; --ok:#3ddc9a; --warn:#e0b25c; --bad:#ff8080;
+           --shadow:0 12px 34px -14px rgba(0,0,0,.7); }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:6vh 5vw 12vh; color:var(--ink);
+    background:
+      radial-gradient(1100px 500px at 12% -10%, color-mix(in srgb,var(--accent) 12%, transparent), transparent 60%),
+      var(--bg);
+    font:15px/1.65 -apple-system,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  main{max-width:38rem;margin:0 auto}
+  h1{font-size:1.75rem;letter-spacing:-.02em;margin:0 0 .3rem;font-weight:700}
+  p.lead{color:var(--sub);margin:0 0 2rem;font-size:.9rem}
+
+  /* 置き場。破線＋中にボタン（ドラッグとクリックの両方を見せる・NN/g） */
+  #drop{
+    border:1.5px dashed var(--line); border-radius:.9rem; padding:2.4rem 1rem; text-align:center;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 4%,transparent),transparent);
+    transition:border-color .15s, background .15s;
+  }
+  #drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,transparent)}
+  #drop .ico{width:2.4rem;height:2.4rem;border-radius:.7rem;margin:0 auto .7rem;display:grid;place-items:center;
+             background:var(--accent-soft);color:var(--accent);font-size:1.1rem}
+  #drop p{margin:0 0 1rem;color:var(--sub);font-size:.88rem}
+
+  .btn{
+    font:inherit;font-size:.82rem;font-weight:600;padding:.45rem 1rem;border:1px solid var(--line);
+    border-radius:.55rem;background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .btn.go{background:var(--accent);color:#fff;border-color:var(--accent);
+          box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 90%,transparent)}
+  .btn.go:hover{filter:brightness(1.06);color:#fff}
+  .btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+  input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+
+  #picked{margin:1.2rem 0 0;display:none}
+  #picked.on{display:block}
+  .file{display:flex;align-items:center;gap:.6rem;padding:.65rem .8rem;border:1px solid var(--line);
+        border-radius:.7rem;background:var(--card)}
+  .badge{font-size:.62rem;font-weight:700;letter-spacing:.04em;padding:.2rem .45rem;border-radius:.35rem;
+         background:var(--accent-soft);color:var(--accent);text-transform:uppercase}
+  .name{font-weight:600;word-break:break-all;font-size:.9rem}
+  .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.9rem}
+  select{font:inherit;font-size:.85rem;padding:.42rem .7rem;border:1px solid var(--line);border-radius:.55rem;
+         background:var(--card);color:var(--ink)}
+  .hint{color:var(--sub);font-size:.8rem}
+
+  #out{margin-top:1.6rem}
+  .card{border:1px solid var(--line);border-radius:.8rem;padding:1rem 1.1rem;background:var(--card);
+        box-shadow:var(--shadow)}
+  .card.done{border-color:color-mix(in srgb,var(--ok) 35%,var(--line));
+             background:color-mix(in srgb,var(--ok) 7%,var(--card))}
+  .card.bad{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
+  .card h2{font-size:.92rem;margin:0 0 .5rem;display:flex;align-items:center;gap:.45rem}
+  .dot{width:.5rem;height:.5rem;border-radius:50%;background:var(--ok)}
+  .note{color:var(--warn);font-size:.82rem;margin-top:.4rem}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;margin:.7rem 0 0;
+     font-size:.75rem;color:var(--sub)}
+  dt{white-space:nowrap}
+  dd{margin:0;word-break:break-all}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.72rem}
+  a.dl{color:var(--accent);font-weight:600;text-decoration:none}
+  a.dl:hover{text-decoration:underline}
+  footer{margin-top:3rem;color:var(--sub);font-size:.8rem;border-top:1px solid var(--line);padding-top:1rem}
+  .lack{margin-top:.8rem;padding:.8rem 1rem;border:1px solid var(--line);border-radius:.7rem;background:var(--card)}
+  .lack div{margin-top:.25rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>kaeru</h1>
+  <p class="lead" id="lead">Convert files. Nothing leaves this machine.</p>
+
+  <div id="drop">
+    <div class="ico">↑</div>
+    <p id="dropText">Drop a file here</p>
+    <label class="btn" for="file" tabindex="0" role="button" id="pickBtn">Choose a file</label>
+    <input type="file" id="file">
+  </div>
+
+  <div id="picked">
+    <div class="file"><span class="badge" id="ext"></span><span class="name" id="name"></span></div>
+    <div class="row">
+      <label for="to" id="toLabel">Convert to</label>
+      <select id="to"></select>
+      <button class="btn go" id="go">Convert</button>
+      <span class="hint" id="count"></span>
+    </div>
+  </div>
+
+  <div id="out"></div>
+
+  <footer id="foot"></footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let file = null;
+
+// 言葉は1か所にまとめる。**既定は英語**（狙う市場が英語圏のため）。
+// ブラウザが日本語なら日本語にする。増やす時はここに1行足すだけ。
+const STRINGS = {
+  en: {
+    lead: 'Convert files. Nothing leaves this machine.',
+    drop: 'Drop a file here', pick: 'Choose a file', to: 'Convert to', go: 'Convert',
+    can: (n) => `${n} target formats available`, cannot: (e) => `${e} cannot be converted`,
+    working: 'Converting…', done: 'Done', failed: 'Could not convert',
+    save: (n) => `Save ${n}`, note: 'Note:',
+    tool: 'Tool', ran: 'Command', took: 'Took', offline: 'Offline',
+    foot: (p, i) => `${p} conversions from ${i} input formats. All done locally.`,
+    more: (n) => `Install more tools to unlock ${n} more conversions.`,
+    unlocks: (n) => `+${n} conversions`,
+  },
+  ja: {
+    lead: 'ファイルを変換します。中身はこの端末から出ません。',
+    drop: 'ここにファイルを置く', pick: 'ファイルを選ぶ', to: '変換先', go: '変換する',
+    can: (n) => `${n}種類に変換できます`, cannot: (e) => `${e} は変換できません`,
+    working: '変換しています…', done: 'できました', failed: 'できませんでした',
+    save: (n) => `${n} を保存`, note: '注意:',
+    tool: '使った道具', ran: '実行したもの', took: 'かかった時間', offline: 'つながりませんでした',
+    foot: (p, i) => `${p}通り・入力${i}形式。すべて手元で変換します。`,
+    more: (n) => `道具を入れると、あと ${n}通り増えます。`,
+    unlocks: (n) => `+${n}通り`,
+  },
+};
+const T = STRINGS[(navigator.language || 'en').toLowerCase().startsWith('ja') ? 'ja' : 'en'];
+document.documentElement.lang = T === STRINGS.ja ? 'ja' : 'en';
+for (const [id, text] of Object.entries({ lead: T.lead, dropText: T.drop, pickBtn: T.pick, toLabel: T.to, go: T.go })) {
+  const el = $(id);
+  if (el) el.textContent = text;
+}
+
+fetch('/info').then((r) => r.json()).then((d) => {
+  const base = T.foot(d.pairs.toLocaleString(), d.inputs);
+  // 道具が足りない機械では「できない」ではなく「入れれば増える」と伝える
+  const lack = d.missing ?? [];
+  $('foot').innerHTML = esc(base) + (lack.length
+    ? `<div class="lack"><b>${esc(T.more(lack.reduce((n, m) => n + m.lost, 0).toLocaleString()))}</b>`
+      + lack.map((m) => `<div>${esc(m.tool)} … ${esc(T.unlocks(m.lost))}　<code>${esc(m.install)}</code></div>`).join('')
+      + '</div>'
+    : '');
+});
+
+const setFile = async (f) => {
+  file = f;
+  $('name').textContent = f.name;
+  $('ext').textContent = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : 'file';
+  $('picked').classList.add('on');
+  $('out').innerHTML = '';
+  const ext = f.name.includes('.') ? f.name.split('.').pop().toLowerCase() : '';
+  const r = await fetch(`/targets?ext=${encodeURIComponent(ext)}`).then((x) => x.json());
+  const to = $('to');
+  to.innerHTML = '';
+  // その入力から本当に作れる形式だけを出す（選んでから駄目と言わない）
+  for (const t of r.targets) to.append(new Option(t, t));
+  $('go').disabled = r.targets.length === 0;
+  $('count').textContent = r.targets.length ? T.can(r.targets.length) : T.cannot(ext || '?');
+};
+
+$('file').addEventListener('change', (e) => e.target.files[0] && setFile(e.target.files[0]));
+// ラベルはキーボードでも押せるようにする（WCAG 2.5.7 の代わり手段）
+document.querySelector('label.btn').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); }
+});
+
+const drop = $('drop');
+for (const ev of ['dragenter', 'dragover']) {
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); });
+}
+for (const ev of ['dragleave', 'drop']) {
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); });
+}
+drop.addEventListener('drop', (e) => e.dataTransfer.files[0] && setFile(e.dataTransfer.files[0]));
+
+$('go').addEventListener('click', async () => {
+  if (!file) return;
+  const to = $('to').value;
+  $('go').disabled = true;
+  $('out').innerHTML = `<div class="card">${esc(T.working)}</div>`;
+  try {
+    const res = await fetch('/convert', {
+      method: 'POST',
+      headers: { 'x-filename': encodeURIComponent(file.name), 'x-to': to },
+      body: file,
+    });
+    const d = await res.json();
+    $('out').innerHTML = d.error
+      ? `<div class="card bad"><h2>${esc(T.failed)}</h2><div>${esc(d.error)}</div></div>`
+      : `<div class="card done">
+           <h2><span class="dot"></span>${esc(T.done)}</h2>
+           ${d.files.map((f) => `<div><a class="dl" href="/file?id=${encodeURIComponent(f.id)}" download="${esc(f.name)}">${esc(T.save(f.name))}</a></div>`).join('')}
+           ${d.note ? `<div class="note">${esc(T.note)} ${esc(d.note)}</div>` : ''}
+           <dl>
+             <dt>${esc(T.tool)}</dt><dd>${esc(d.cmd)}</dd>
+             <dt>${esc(T.ran)}</dt><dd><code>${esc(d.command)}</code></dd>
+             <dt>${esc(T.took)}</dt><dd>${d.ms}ms</dd>
+           </dl>
+         </div>`;
+  } catch (e) {
+    $('out').innerHTML = `<div class="card bad">${esc(T.offline)}: ${esc(String(e))}</div>`;
+  }
+  $('go').disabled = false;
+});
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+</script>
+</body>
+</html>
