@@ -1,6 +1,6 @@
 {
   "name": "@noguchilin/kaeru",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Convert anything, locally. One engine, two doors: an MCP server for your agents and a local web page for you.",
   "type": "module",
   "bin": {
