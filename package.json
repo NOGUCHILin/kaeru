@@ -31,7 +31,7 @@
     "model-context-protocol",
     "file-conversion",
     "converter",
-    "offline",
+    "no-upload",
     "local",
     "privacy",
     "ffmpeg",

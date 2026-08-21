@@ -1,6 +1,6 @@
 # kaeru
 
-**Convert anything. Nothing leaves your machine.**
+**Convert anything. Your files are never uploaded to convert them.**
 One tool your AI agents and you both use.
 
 ```bash
@@ -126,7 +126,11 @@ pip install weasyprint
 ## Privacy and security
 
 - Files are processed by local programs. **kaeru makes no network requests** (except when you
-  explicitly pass a video-site URL).
+  explicitly pass a video-site URL — that path downloads, by definition).
+- **What kaeru does not control: what you do with the result.** If your agent then *reads* the
+  converted file, its contents go to whatever model provider that agent uses. kaeru governs the
+  conversion, not the reading. For a file that must never reach a model, convert it and open it
+  yourself in the local web page (`npm run ui`) instead of handing it to an agent.
 - The web page binds to `127.0.0.1`, rejects non-localhost `Host` headers, and hands results
   back by an unguessable id.
 - **Existing files are never overwritten** unless you ask for it.

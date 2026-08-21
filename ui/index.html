@@ -88,7 +88,7 @@
 <body>
 <main>
   <h1>kaeru</h1>
-  <p class="lead" id="lead">Convert files. Nothing leaves this machine.</p>
+  <p class="lead" id="lead">Convert files. Nothing is uploaded to convert them.</p>
 
   <div id="drop">
     <div class="ico">↑</div>
@@ -120,7 +120,7 @@ let file = null;
 // ブラウザが日本語なら日本語にする。増やす時はここに1行足すだけ。
 const STRINGS = {
   en: {
-    lead: 'Convert files. Nothing leaves this machine.',
+    lead: 'Convert files. Nothing is uploaded to convert them.',
     drop: 'Drop a file here', pick: 'Choose a file', to: 'Convert to', go: 'Convert',
     can: (n) => `${n} target formats available`, cannot: (e) => `${e} cannot be converted`,
     working: 'Converting…', done: 'Done', failed: 'Could not convert',
@@ -131,7 +131,7 @@ const STRINGS = {
     unlocks: (n) => `+${n} conversions`,
   },
   ja: {
-    lead: 'ファイルを変換します。中身はこの端末から出ません。',
+    lead: 'ファイルを変換します。変換のために外へ送りません。',
     drop: 'ここにファイルを置く', pick: 'ファイルを選ぶ', to: '変換先', go: '変換する',
     can: (n) => `${n}種類に変換できます`, cannot: (e) => `${e} は変換できません`,
     working: '変換しています…', done: 'できました', failed: 'できませんでした',
