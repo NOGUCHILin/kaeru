@@ -80,6 +80,52 @@ if (process.argv.includes('--list')) {
     lines.push('', '道具はすべて揃っています。');
   }
   process.stdout.write(`${lines.join('\n')}\n`);
+} else if (process.argv.length > 2) {
+  // 人が手で叩いた時。1回変換して、出来たものの場所を書いて終わる。
+  // ここが無いと、道具として使う方法が「エージェントに頼む」しか無くなる（実測: 呼ばれない）。
+  const argv = process.argv.slice(2);
+  const taken = new Set();
+  const opt = (name) => {
+    const i = argv.indexOf(`--${name}`);
+    if (i < 0) return undefined;
+    taken.add(i).add(i + 1);
+    return argv[i + 1];
+  };
+  const to = opt('to');
+  const output = opt('output');
+  const pages = opt('pages');
+  const input = argv.filter((a, i) => !taken.has(i) && !a.startsWith('--'));
+
+  if (!to || !input.length) {
+    process.stdout.write(
+      [
+        '使い方:',
+        '  kaeru <入力> --to <形式> [--output <出力先>] [--pages 1-3] [--overwrite]',
+        '  kaeru --doctor    この機械で何通り変換できるか',
+        '  kaeru --list      対応表をそのまま出す',
+        '',
+        '例:',
+        '  kaeru shashin.png --to jpg',
+        '  kaeru shiryou.pdf --to pdf --output chiisai.pdf   # 同じ形式なら小さくする',
+        '  kaeru a.pdf b.pdf --to pdf --output matome.pdf    # PDF はまとめられる',
+      ].join('\n') + '\n',
+    );
+  } else {
+    try {
+      const { outs, ms, note } = await convert({
+        input: input.length === 1 ? input[0] : input,
+        to,
+        output,
+        pages,
+        overwrite: argv.includes('--overwrite'),
+      });
+      process.stdout.write(`${outs.join('\n')}\n`);
+      process.stderr.write(`（${ms}ms${note ? ' / ' + note : ''}）\n`);
+    } catch (e) {
+      process.stderr.write(`${e.message}\n`);
+      process.exitCode = 1;
+    }
+  }
 } else {
   await server.connect(new StdioServerTransport());
 }

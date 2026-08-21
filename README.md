@@ -46,14 +46,15 @@ Install these to unlock more:
 
 Nothing installed? Nothing breaks — you get 0 conversions and a list of one-line installs.
 
-## Two doors, one engine
+## Three doors, one engine
 
 | Door | For | Start it |
 |---|---|---|
+| **Command line** | you, right now | `npx @noguchilin/kaeru photo.png --to jpg` |
 | **MCP server** | your AI agents | add one line to `.mcp.json` |
-| **Local web page** | you | `npm run ui` → http://127.0.0.1:19921 |
+| **Local web page** | you, with a file picker | `npm run ui` → http://127.0.0.1:19921 |
 
-Both call the same code, so an agent and a human can never disagree about what's possible.
+All three call the same code, so an agent and a human can never disagree about what's possible.
 
 ### For agents (MCP)
 
@@ -64,7 +65,18 @@ Both call the same code, so an agent and a human can never disagree about what's
 One tool, `convert`. Ask for something impossible and it replies with what *is* possible
 from that input — or which tool to install.
 
-### For humans
+### For humans, from the shell
+
+```bash
+npx @noguchilin/kaeru photo.png --to jpg
+npx @noguchilin/kaeru report.pdf --to pdf --output smaller.pdf   # same format = compress
+npx @noguchilin/kaeru a.pdf b.pdf --to pdf --output merged.pdf   # PDFs merge
+```
+
+It prints the path it wrote and exits. Run it with no arguments and it becomes the MCP
+server instead — that is how your agent starts it.
+
+### For humans, from a page
 
 `npm run ui` opens a single page on `127.0.0.1` only. Drop a file, pick a target, save the
 result. **It does not stay running** — Ctrl-C and it's gone. No Docker, no daemon, no account.
