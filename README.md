@@ -3,6 +3,12 @@
 **Convert anything. Your files are never uploaded to convert them.**
 One tool your AI agents and you both use.
 
+![kaeru converting a confidential .docx to Markdown, entirely on the local machine](https://raw.githubusercontent.com/NOGUCHILin/kaeru/main/docs/kaeru-ui-en.gif)
+
+*A contract that cannot leave the building, turned into something an agent can read.
+Note the **Tool** and **Command** lines: that is the binary on your machine, and the exact
+command it ran. Nothing to take on faith.*
+
 ```bash
 npx @noguchilin/kaeru --doctor     # what can this machine convert?
 ```
